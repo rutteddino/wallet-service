@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/rutteddino/wallet-service/internal/config"
 )
 

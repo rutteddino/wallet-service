@@ -8,7 +8,7 @@ import (
 
 type Wallet struct {
 	ID        uuid.UUID
-	Balance   int64
+	Balance   int64 // В минорных единицах (копейках)
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -20,13 +20,17 @@ const (
 	OperationWithdraw OperationType = "WITHDRAW"
 )
 
+func (t OperationType) Valid() bool {
+	return t == OperationDeposit || t == OperationWithdraw
+}
+
 type WalletOperation struct {
 	WalletID uuid.UUID
 	Type     OperationType
-	Amount   int64
+	Amount   int64 // В минорных единицах (копейках)
 }
 
-// Доменые ошибки
+// Доменные ошибки
 var (
 	ErrWalletNotFound    = errors.New("wallet not found")
 	ErrInsufficientFunds = errors.New("insufficient funds")
