@@ -1,5 +1,7 @@
 # Wallet Service
 
+[![CI](https://github.com/rutteddino/wallet-service/actions/workflows/ci.yml/badge.svg)](https://github.com/rutteddino/wallet-service/actions/workflows/ci.yml)
+
 REST-сервис для управления балансом кошельков. Тестовое задание.
 
 ## Стек

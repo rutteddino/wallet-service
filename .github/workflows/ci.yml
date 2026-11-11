@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+          cache: true
+
+      - name: Check formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "files are not gofmt-formatted:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      # На раннерах ubuntu есть и gcc (для -race), и Docker (для testcontainers)
+      - name: Test with race detector
+        run: go test ./... -race -count=1
+
+      - name: Docker Compose smoke test
+        run: |
+          docker compose up -d --build
+          # ждём готовности приложения: любой HTTP-ответ (даже 404) значит, что сервер поднялся
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/v1/wallets/00000000-0000-0000-0000-000000000000 || true)
+            if [ "$code" = "404" ] || [ "$code" = "200" ]; then
+              break
+            fi
+            sleep 1
+          done
+          echo "app is up (probe status: $code)"
+          # создаём кошелёк и проверяем баланс
+          curl -sf -X POST http://localhost:8080/api/v1/wallet \
+            -H "Content-Type: application/json" \
+            -d '{"walletId":"11111111-1111-1111-1111-111111111111","operationType":"DEPOSIT","amount":1000}'
+          echo
+          curl -sf http://localhost:8080/api/v1/wallets/11111111-1111-1111-1111-111111111111 | grep -q '"balance":1000'
+          echo "smoke test passed"
+          docker compose down -v
