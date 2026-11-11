@@ -54,7 +54,13 @@ func Load(path string) (Config, error) {
 
 func (c Config) DatabaseURL() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		c.DBUser, c.DBPassword, c.DBHost, c.DBHost, c.DBName)
+		c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.DBName)
+}
+
+// MigrateURL возвращает DSN для golang-migrate с драйвером pgx/v5.
+func (c Config) MigrateURL() string {
+	return fmt.Sprintf("pgx5://%s:%s@%s:%s/%s?sslmode=disable",
+		c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.DBName)
 }
 
 func (c Config) validate() error {
