@@ -40,6 +40,13 @@ jobs:
 
       - name: Docker Compose smoke test
         run: |
+          # config.env в gitignore: восстанавливаем из секрета,
+          # а если секрета нет (форки), берём пример
+          if [ -n "${{ secrets.CONFIG_ENV }}" ]; then
+            echo "${{ secrets.CONFIG_ENV }}" > config.env
+          else
+            cp config.env.example config.env
+          fi
           docker compose up -d --build
           # ждём готовности приложения через healthcheck
           for i in $(seq 1 60); do
