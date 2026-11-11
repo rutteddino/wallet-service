@@ -34,6 +34,12 @@ func main() {
 
 	ctx := context.Background()
 
+	// Стартовые операции ограничиваем таймаутом: если БД висит
+	// (TCP открыт, но не отвечает), падаем с ошибкой за 30 секунд,
+	// а не стартуем вечно.
+	startupCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	// Миграции
 	if err := runMigrations(cfg); err != nil {
 		slog.Error("failed to run migrations", "err", err)
@@ -42,7 +48,7 @@ func main() {
 	slog.Info("migrations applied")
 
 	// Коннект к ДБ
-	repo, err := postgres.NewWalletRepository(ctx, cfg)
+	repo, err := postgres.NewWalletRepository(startupCtx, cfg)
 	if err != nil {
 		slog.Error("failed to connect to database", "err", err)
 		os.Exit(1)

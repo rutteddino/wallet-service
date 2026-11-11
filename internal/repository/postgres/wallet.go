@@ -132,7 +132,9 @@ func (r *WalletRepository) ApplyOperation(ctx context.Context, op domain.WalletO
 		// Откатываем только что сделанное изменение баланса
 		// и возвращаем текущий зафиксированный баланс.
 		_ = tx.Rollback(ctx)
-		return r.GetBalance(ctx, op.WalletID)
+		// WithoutCancel: клиент мог отключиться после ретрая,
+		// но штатный ответ всё равно нужно попытаться отдать.
+		return r.GetBalance(context.WithoutCancel(ctx), op.WalletID)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
