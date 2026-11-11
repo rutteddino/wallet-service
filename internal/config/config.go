@@ -52,6 +52,11 @@ func Load(path string) (Config, error) {
 	return cfg, nil
 }
 
+func (c Config) DatabaseURL() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		c.DBUser, c.DBPassword, c.DBHost, c.DBHost, c.DBName)
+}
+
 func (c Config) validate() error {
 	if c.ServerPort == "" {
 		return fmt.Errorf("SERVER_PORT must not be empty")

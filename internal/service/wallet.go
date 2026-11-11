@@ -21,9 +21,15 @@ func (s *WalletService) ApplyOperation(ctx context.Context, op domain.WalletOper
 		return 0, domain.ErrInvalidOperation
 	}
 
+	// Если клиент не прислал ключ идемпотентности — генерируем сами,
+	// чтобы каждая операция гарантированно имела уникальный ключ.
+	if op.IdempotencyKey == "" {
+		op.IdempotencyKey = uuid.New().String()
+	}
+
 	return s.repo.ApplyOperation(ctx, op)
 }
 
-func (s *WalletService) GetBalance(ctx context.Context, walerId uuid.UUID) (int64, error) {
-	return s.repo.GetBalance(ctx, walerId)
+func (s *WalletService) GetBalance(ctx context.Context, walletID uuid.UUID) (int64, error) {
+	return s.repo.GetBalance(ctx, walletID)
 }

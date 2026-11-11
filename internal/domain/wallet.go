@@ -25,9 +25,10 @@ func (t OperationType) Valid() bool {
 }
 
 type WalletOperation struct {
-	WalletID uuid.UUID
-	Type     OperationType
-	Amount   int64 // В минорных единицах (копейках)
+	WalletID       uuid.UUID
+	Type           OperationType
+	Amount         int64 // В минорных единицах (копейках)
+	IdempotencyKey string
 }
 
 // Доменные ошибки

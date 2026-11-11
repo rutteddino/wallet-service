@@ -55,9 +55,13 @@ func (h *WalletHandler) ApplyOperation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO нужны ли ещё валидации или можно оставить валидацию сервиса?
+	idempotencyKey := r.Header.Get("Idempotency-Key")
 
-	balance, err := h.svc.ApplyOperation(r.Context(), domain.WalletOperation{WalletID: req.WalletId, Type: domain.OperationType(req.OperationType), Amount: req.Amount})
+	balance, err := h.svc.ApplyOperation(r.Context(), domain.WalletOperation{
+		WalletID:       req.WalletId,
+		Type:           domain.OperationType(req.OperationType),
+		Amount:         req.Amount,
+		IdempotencyKey: idempotencyKey})
 
 	if err != nil {
 		h.writeDomainError(w, err)
