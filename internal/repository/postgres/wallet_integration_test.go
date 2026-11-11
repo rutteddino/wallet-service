@@ -27,7 +27,7 @@ func TestDeposit_CreatesWalletAndAccumulates(t *testing.T) {
 		t.Fatalf("ожидали 1000, получили %d", balance)
 	}
 
-	// Второй — накапливает.
+	// Второй накапливает.
 	balance, err = repo.ApplyOperation(ctx, domain.WalletOperation{
 		WalletID: walletID, Type: domain.OperationDeposit, Amount: 500, IdempotencyKey: uuid.New().String(),
 	})

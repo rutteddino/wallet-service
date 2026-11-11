@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	)
 	if err != nil {
 		// На этом этапе ошибка почти всегда означает,
-		// что Docker не запущен — пропускаем, а не падаем.
+		// что Docker не запущен, поэтому пропускаем, а не падаем.
 		log.Printf("docker is not available (%v), skipping integration tests", err)
 		os.Exit(0)
 	}
@@ -74,7 +74,7 @@ func setup(t *testing.T) *WalletRepository {
 	return &WalletRepository{pool: testPool}
 }
 
-// runTestMigrations применяет миграции из корня репозитория —
+// runTestMigrations применяет миграции из корня репозитория:
 // те же файлы и тот же движок, что и в проде.
 // Source делаем через iofs (os.DirFS): file://-источник golang-migrate
 // не умеет в Windows-пути вида D:\... (двоеточие ломает парсинг URL).

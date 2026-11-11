@@ -74,7 +74,7 @@ func (r *WalletRepository) ApplyOperation(ctx context.Context, op domain.WalletO
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	// 1. Сначала меняем баланс — это гарантирует, что к моменту вставки
+	// 1. Сначала меняем баланс: это гарантирует, что к моменту вставки
 	// записи об операции строка кошелька уже существует (Foreign Key constraint).
 	var balance int64
 	switch op.Type {

@@ -13,7 +13,7 @@ import (
 	"github.com/rutteddino/wallet-service/internal/service"
 )
 
-// fakeRepo — ручной мок repository.WalletRepository.
+// fakeRepo реализует repository.WalletRepository для тестов.
 type fakeRepo struct {
 	lastOp  domain.WalletOperation
 	balance int64

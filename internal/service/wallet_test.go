@@ -9,7 +9,7 @@ import (
 	"github.com/rutteddino/wallet-service/internal/domain"
 )
 
-// fakeRepo — ручной мок repository.WalletRepository.
+// fakeRepo реализует repository.WalletRepository для тестов.
 type fakeRepo struct {
 	calls   int
 	lastOp  domain.WalletOperation
@@ -59,7 +59,7 @@ func TestApplyOperation_GeneratesIdempotencyKey(t *testing.T) {
 	svc := NewWalletService(repo)
 	op := domain.WalletOperation{WalletID: uuid.New(), Type: domain.OperationDeposit, Amount: 100}
 
-	// Ключ не задан — сервис обязан сгенерировать.
+	// Ключ не задан, сервис обязан сгенерировать.
 	if _, err := svc.ApplyOperation(context.Background(), op); err != nil {
 		t.Fatalf("неожиданная ошибка: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestApplyOperation_GeneratesIdempotencyKey(t *testing.T) {
 		t.Fatalf("сгенерированный ключ должен быть валидным UUID: %v", err)
 	}
 
-	// Два вызова без ключа — два РАЗНЫХ ключа (иначе ретраи «склеятся»).
+	// Два вызова без ключа дают два РАЗНЫХ ключа (иначе ретраи склеятся).
 	first := repo.lastOp.IdempotencyKey
 	if _, err := svc.ApplyOperation(context.Background(), op); err != nil {
 		t.Fatalf("неожиданная ошибка: %v", err)
