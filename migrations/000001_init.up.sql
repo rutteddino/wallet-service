@@ -5,11 +5,13 @@ CREATE TABLE IF NOT EXISTS wallets (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Заполнряем Базу для отладки
-INSERT INTO wallets (id, balance) VALUES
-    ('11111111-1111-1111-1111-111111111111', 100000),
-    ('22222222-2222-2222-2222-222222222222', 50000),
-    ('33333333-3333-3333-3333-333333333333', 0),
-    ('44444444-4444-4444-4444-444444444444', 7500),
-    ('55555555-5555-5555-5555-555555555555', 123456)
-ON CONFLICT (id) DO NOTHING;
+CREATE TABLE IF NOT EXISTS operations (
+    id              UUID PRIMARY KEY,
+    wallet_id       UUID NOT NULL REFERENCES wallets (id),
+    operation_type  TEXT NOT NULL CHECK (operation_type IN ('DEPOSIT', 'WITHDRAW')),
+    amount          BIGINT NOT NULL CHECK (amount > 0),
+    idempotency_key TEXT NOT NULL UNIQUE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_operations_wallet_id ON operations (wallet_id);
