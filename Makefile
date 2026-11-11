@@ -1,4 +1,4 @@
-.PHONY: up down restart build logs psql test test-race lint clean
+.PHONY: up down restart build logs psql test test-race load lint clean
 
 # Поднять всю систему (app + postgres) с пересборкой
 up:
@@ -38,6 +38,13 @@ test-race:
 		-v wallet-gobuild-cache:/root/.cache/go-build \
 		-w /src golang:1.27-bookworm \
 		go test ./... -race -count=1
+
+# Нагрузочный тест k6 (нужна запущенная система: make up)
+load:
+	docker run --rm \
+		-v "$(CURDIR)/scripts:/scripts" \
+		-e BASE_URL=http://host.docker.internal:8080 \
+		grafana/k6:latest run /scripts/load-test.js
 
 # Линтер (требует установленный golangci-lint)
 lint:
