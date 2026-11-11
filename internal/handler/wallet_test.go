@@ -139,6 +139,22 @@ func TestApplyOperation_DomainErrorMapping(t *testing.T) {
 	}
 }
 
+func TestHealth(t *testing.T) {
+	repo := &fakeRepo{}
+	srv := newTestServer(repo)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/health")
+	if err != nil {
+		t.Fatalf("запрос упал: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("ожидали 200, получили %d", resp.StatusCode)
+	}
+}
+
 func TestGetBalance(t *testing.T) {
 	repo := &fakeRepo{balance: 999}
 	srv := newTestServer(repo)

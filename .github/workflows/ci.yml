@@ -41,15 +41,14 @@ jobs:
       - name: Docker Compose smoke test
         run: |
           docker compose up -d --build
-          # ждём готовности приложения: любой HTTP-ответ (даже 404) значит, что сервер поднялся
+          # ждём готовности приложения через healthcheck
           for i in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/v1/wallets/00000000-0000-0000-0000-000000000000 || true)
-            if [ "$code" = "404" ] || [ "$code" = "200" ]; then
+            if curl -sf http://localhost:8080/health > /dev/null; then
               break
             fi
             sleep 1
           done
-          echo "app is up (probe status: $code)"
+          echo "app is up"
           # создаём кошелёк и проверяем баланс
           curl -sf -X POST http://localhost:8080/api/v1/wallet \
             -H "Content-Type: application/json" \

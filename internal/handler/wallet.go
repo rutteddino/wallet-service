@@ -49,7 +49,15 @@ func NewWalletRouter(h *WalletHandler) http.Handler {
 		r.Get("/wallets/{walletId}", h.GetBalance)
 	})
 
+	// Liveness probe для docker healthcheck и оркестраторов
+	r.Get("/health", h.Health)
+
 	return r
+}
+
+// Health обрабатывает GET /health: приложение живо и принимает запросы.
+func (h *WalletHandler) Health(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 // ApplyOperation обрабатывает POST /api/v1/wallet.
