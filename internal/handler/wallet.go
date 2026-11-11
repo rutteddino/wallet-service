@@ -36,6 +36,7 @@ func NewWalletHandler(svc *service.WalletService) *WalletHandler {
 func NewWalletRouter(h *WalletHandler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
+	r.Use(loggingMiddleware)
 	r.Use(middleware.Recoverer)
 
 	r.Route("/api/v1", func(r chi.Router) {
