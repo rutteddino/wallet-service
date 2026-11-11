@@ -14,10 +14,13 @@ import (
 	"github.com/rutteddino/wallet-service/internal/domain"
 )
 
+// WalletRepository хранит кошельки и операции в PostgreSQL.
 type WalletRepository struct {
 	pool *pgxpool.Pool
 }
 
+// NewWalletRepository создаёт пул соединений и ждёт, пока база
+// начнёт отвечать (полезно сразу после docker compose up).
 func NewWalletRepository(ctx context.Context, cfg config.Config) (*WalletRepository, error) {
 	poolCfg, err := pgxpool.ParseConfig(cfg.DatabaseURL())
 	if err != nil {
@@ -55,6 +58,7 @@ func NewWalletRepository(ctx context.Context, cfg config.Config) (*WalletReposit
 	return &WalletRepository{pool: pool}, nil
 }
 
+// Close освобождает пул соединений.
 func (r *WalletRepository) Close() {
 	r.pool.Close()
 }
@@ -144,9 +148,9 @@ func (r *WalletRepository) ApplyOperation(ctx context.Context, op domain.WalletO
 }
 
 // GetBalance реализует repository.WalletRepository.
-func (r *WalletRepository) GetBalance(ctx context.Context, walletId uuid.UUID) (int64, error) {
+func (r *WalletRepository) GetBalance(ctx context.Context, walletID uuid.UUID) (int64, error) {
 	var balance int64
-	err := r.pool.QueryRow(ctx, `SELECT balance FROM wallets WHERE id = $1`, walletId).Scan(&balance)
+	err := r.pool.QueryRow(ctx, `SELECT balance FROM wallets WHERE id = $1`, walletID).Scan(&balance)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, domain.ErrWalletNotFound
 	}

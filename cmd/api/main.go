@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -25,11 +26,19 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
 
+	// Вся логика в run: defer там отрабатывают штатно,
+	// а os.Exit здесь вызывается уже после них.
+	if err := run(); err != nil {
+		slog.Error("fatal", "err", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	// Чтение config.env
 	cfg, err := config.Load("config.env")
 	if err != nil {
-		slog.Error("failed to load config", "err", err)
-		os.Exit(1)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	ctx := context.Background()
@@ -42,16 +51,14 @@ func main() {
 
 	// Миграции
 	if err := runMigrations(cfg); err != nil {
-		slog.Error("failed to run migrations", "err", err)
-		os.Exit(1)
+		return fmt.Errorf("run migrations: %w", err)
 	}
 	slog.Info("migrations applied")
 
 	// Коннект к ДБ
 	repo, err := postgres.NewWalletRepository(startupCtx, cfg)
 	if err != nil {
-		slog.Error("failed to connect to database", "err", err)
-		os.Exit(1)
+		return fmt.Errorf("connect to database: %w", err)
 	}
 	defer repo.Close()
 	slog.Info("connected to database")
@@ -72,25 +79,30 @@ func main() {
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	serverErr := make(chan error, 1)
 	go func() {
 		slog.Info("server started", "port", cfg.ServerPort)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("server failed", "err", err)
-			os.Exit(1)
+			serverErr <- err
 		}
 	}()
 
-	<-shutdownCtx.Done()
-	slog.Info("shutting down")
+	// Ждём сигнал остановки или падение сервера
+	select {
+	case <-shutdownCtx.Done():
+		slog.Info("shutting down")
+	case err := <-serverErr:
+		return fmt.Errorf("server failed: %w", err)
+	}
 
 	// Даём активным запросам до 10 секунд на завершение
 	graceCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(graceCtx); err != nil {
-		slog.Error("graceful shutdown failed", "err", err)
-		os.Exit(1)
+		return fmt.Errorf("graceful shutdown: %w", err)
 	}
 	slog.Info("server stopped")
+	return nil
 }
 
 func runMigrations(cfg config.Config) error {

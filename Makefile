@@ -46,9 +46,14 @@ load:
 		-e BASE_URL=http://host.docker.internal:8080 \
 		grafana/k6:latest run /scripts/load-test.js
 
-# Линтер (требует установленный golangci-lint)
+# Линтер в контейнере (локальная установка golangci-lint не нужна)
 lint:
-	golangci-lint run
+	docker run --rm \
+		-v "$(CURDIR):/app" \
+		-v wallet-gomod-cache:/go/pkg/mod \
+		-v wallet-gobuild-cache:/root/.cache/go-build \
+		-v wallet-golangci-cache:/root/.cache/golangci-lint \
+		-w /app golangci/golangci-lint:latest golangci-lint run
 
 # Удалить локальный бинарник
 clean:

@@ -93,7 +93,7 @@ func runTestMigrations(dsn string) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	driver, err := pgxmigrate.WithInstance(db, &pgxmigrate.Config{})
 	if err != nil {

@@ -1,0 +1,40 @@
+version: "2"
+
+linters:
+  # Стандартный набор (errcheck, govet, ineffassign, staticcheck, unused)
+  # уже включён по умолчанию,  добавим сверху.
+  enable:
+    - revive        # стилистика и идиоматика (именование ID/URL и т.п.)
+    - gocritic      # подозрительные конструкции
+    - misspell      # опечатки в комментариях (англ.)
+    - unconvert     # лишние конверсии типов
+    - unparam       # неиспользуемые параметры и постоянные результаты
+    - whitespace    # лишние пустые строки у скобок
+    - bodyclose     # незакрытые тела HTTP-ответов
+    - noctx         # HTTP-запросы без контекста
+    - nilerr        # возврат nil при ненулевой ошибке
+    - perfsprint    # fmt.Sprintf там, где есть быстрые альтернативы
+    - usestdlibvars # константы stdlib вместо строковых литералов
+
+  settings:
+    revive:
+      rules:
+        # Имена пакетов и инициализмы (Id -> ID и т.п.)
+        - name: var-naming
+        - name: exported
+        - name: package-comments
+          disabled: true   # комментарии к пакетам не требуем
+
+  exclusions:
+    rules:
+      # В тестах контексты и проверка Close у httpx-ответов
+      # добавляют шума, не повышая качество.
+      - path: _test\.go
+        linters:
+          - noctx
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

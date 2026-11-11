@@ -15,24 +15,29 @@ import (
 )
 
 type operationRequest struct {
-	WalletId      uuid.UUID `json:"walletId"`
+	WalletID      uuid.UUID `json:"walletId"`
 	OperationType string    `json:"operationType"`
 	Amount        int64     `json:"amount"`
 }
 
 type balanceResponse struct {
-	WalletId uuid.UUID `json:"walletId"`
+	WalletID uuid.UUID `json:"walletId"`
 	Balance  int64     `json:"balance"`
 }
 
+// WalletHandler обслуживает HTTP-эндпоинты кошельков.
 type WalletHandler struct {
 	svc *service.WalletService
 }
 
+// NewWalletHandler создаёт WalletHandler.
 func NewWalletHandler(svc *service.WalletService) *WalletHandler {
 	return &WalletHandler{svc: svc}
 }
 
+// NewWalletRouter собирает роутер сервиса с middleware.
+// Порядок middleware осмысленный: RequestID генерирует id, логгер его использует,
+// Recoverer перехватывает панику внутри, а лог всё равно записывается.
 func NewWalletRouter(h *WalletHandler) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -47,6 +52,7 @@ func NewWalletRouter(h *WalletHandler) http.Handler {
 	return r
 }
 
+// ApplyOperation обрабатывает POST /api/v1/wallet.
 func (h *WalletHandler) ApplyOperation(w http.ResponseWriter, r *http.Request) {
 	var req operationRequest
 	dec := json.NewDecoder(r.Body)
@@ -59,7 +65,7 @@ func (h *WalletHandler) ApplyOperation(w http.ResponseWriter, r *http.Request) {
 	idempotencyKey := r.Header.Get("Idempotency-Key")
 
 	balance, err := h.svc.ApplyOperation(r.Context(), domain.WalletOperation{
-		WalletID:       req.WalletId,
+		WalletID:       req.WalletID,
 		Type:           domain.OperationType(req.OperationType),
 		Amount:         req.Amount,
 		IdempotencyKey: idempotencyKey})
@@ -69,22 +75,23 @@ func (h *WalletHandler) ApplyOperation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, balanceResponse{WalletId: req.WalletId, Balance: balance})
+	writeJSON(w, http.StatusOK, balanceResponse{WalletID: req.WalletID, Balance: balance})
 }
 
+// GetBalance обрабатывает GET /api/v1/wallets/{walletId}.
 func (h *WalletHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
-	walletId, err := uuid.Parse(chi.URLParam(r, "walletId"))
+	walletID, err := uuid.Parse(chi.URLParam(r, "walletId"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid walletId: must be UUID")
 		return
 	}
 
-	balance, err := h.svc.GetBalance(r.Context(), walletId)
+	balance, err := h.svc.GetBalance(r.Context(), walletID)
 	if err != nil {
 		h.writeDomainError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, balanceResponse{WalletId: walletId, Balance: balance})
+	writeJSON(w, http.StatusOK, balanceResponse{WalletID: walletID, Balance: balance})
 }
 
 func (h *WalletHandler) writeDomainError(w http.ResponseWriter, err error) {

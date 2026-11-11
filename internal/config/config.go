@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Config это конфигурация сервиса.
 type Config struct {
 	ServerPort string
 
@@ -22,6 +24,8 @@ type Config struct {
 	MigrationsPath string
 }
 
+// Load читает переменные из env-файла (если он существует) и окружения.
+// Переменные окружения имеют приоритет над файлом.
 func Load(path string) (Config, error) {
 	// Необрабатываем ошибку, переменые могут быть в реальном окружении
 	_ = godotenv.Load(path)
@@ -31,7 +35,7 @@ func Load(path string) (Config, error) {
 	// для trust-аутентификации.
 	dbPassword, ok := os.LookupEnv("DB_PASSWORD")
 	if !ok {
-		return Config{}, fmt.Errorf("DB_PASSWORD is required")
+		return Config{}, errors.New("DB_PASSWORD is required")
 	}
 
 	cfg := Config{
@@ -52,6 +56,7 @@ func Load(path string) (Config, error) {
 	return cfg, nil
 }
 
+// DatabaseURL возвращает DSN для pgx.
 func (c Config) DatabaseURL() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.DBName)
@@ -65,19 +70,19 @@ func (c Config) MigrateURL() string {
 
 func (c Config) validate() error {
 	if c.ServerPort == "" {
-		return fmt.Errorf("SERVER_PORT must not be empty")
+		return errors.New("SERVER_PORT must not be empty")
 	}
 	if c.DBHost == "" {
-		return fmt.Errorf("DB_HOST must not be empty")
+		return errors.New("DB_HOST must not be empty")
 	}
 	if c.DBPort == "" {
-		return fmt.Errorf("DB_PORT must not be empty")
+		return errors.New("DB_PORT must not be empty")
 	}
 	if c.DBUser == "" {
-		return fmt.Errorf("DB_USER must not be empty")
+		return errors.New("DB_USER must not be empty")
 	}
 	if c.DBName == "" {
-		return fmt.Errorf("DB_NAME must not be empty")
+		return errors.New("DB_NAME must not be empty")
 	}
 	if c.DBMaxConns <= 0 {
 		return fmt.Errorf("DB_MAX_CONNS must be positive, got %d", c.DBMaxConns)
